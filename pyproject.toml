@@ -5,7 +5,9 @@ description = "MCP-style server exposing pyCycle/OpenMDAO engine cycle tools"
 authors = [{ name = "OpenAI Assistant" }]
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+  "fastmcp>=2.13.1,<3.0.0",
+]
 
 [project.optional-dependencies]
 full = [
