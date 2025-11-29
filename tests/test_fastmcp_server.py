@@ -11,11 +11,14 @@ def test_build_server_exposes_schemas() -> None:
     server = fastmcp_server.build_server()
     tool = anyio.run(server.get_tool, "compute_totals")
 
+    assert tool.output_schema is not None
     assert tool.output_schema["type"] == "object"
     assert "jacobian" in tool.output_schema.get("properties", {})
 
 
-def test_create_cycle_model_wrapper_returns_structured(monkeypatch: MonkeyPatch) -> None:
+def test_create_cycle_model_wrapper_returns_structured(
+    monkeypatch: MonkeyPatch,
+) -> None:
     def fake_create(payload: dict[str, object]) -> dict[str, object]:
         assert payload["cycle_type"] == "custom"
         return {
@@ -40,6 +43,7 @@ def test_create_cycle_model_wrapper_returns_structured(monkeypatch: MonkeyPatch)
         },
     )
 
+    assert result.structured_content is not None
     assert result.structured_content["session_id"] == "abc123"
     assert result.structured_content["model_name"] == "demo"
 

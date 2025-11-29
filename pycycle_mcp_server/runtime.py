@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import Literal
 
 from fastmcp.server import FastMCP
 
@@ -12,7 +13,7 @@ from fastmcp.server import FastMCP
 class ServerSettings:
     """Transport and networking configuration for FastMCP."""
 
-    transport: str = "stdio"
+    transport: Literal["stdio", "http", "sse", "streamable-http"] = "stdio"
     host: str = "127.0.0.1"
     port: int = 8000
     show_banner: bool = False

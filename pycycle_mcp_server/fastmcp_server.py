@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, TypeVar
+from collections.abc import Callable
+from typing import Any, Literal, TypedDict, TypeVar, cast
 
 from fastmcp.server import FastMCP
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel
+from typing_extensions import Unpack
 
 from . import tools
 from .schemas import (
@@ -30,9 +32,31 @@ from .schemas import (
     SweepVariable,
 )
 
+__all__ = ["build_server", "tools"]
+
 LOGGER = logging.getLogger(__name__)
 
 ResponseModel = TypeVar("ResponseModel", bound=BaseModel)
+ToolFunc = Callable[..., dict[str, Any]]
+
+
+class ToolKwargs(TypedDict, total=False):
+    """Subset of FastMCP tool configuration parameters used by this module."""
+
+    name: str
+    title: str | None
+    description: str | None
+    tags: set[str]
+    output_schema: dict[str, Any] | None
+    annotations: ToolAnnotations | dict[str, Any] | None
+
+
+def _tool(
+    server: FastMCP, **kwargs: Unpack[ToolKwargs]
+) -> Callable[[ToolFunc], ToolFunc]:
+    """Typed wrapper around :meth:`FastMCP.tool` to satisfy type checkers."""
+
+    return cast(Callable[[ToolFunc], ToolFunc], server.tool(**kwargs))
 
 
 def _validated_response(
@@ -40,13 +64,15 @@ def _validated_response(
 ) -> dict[str, Any]:
     """Validate and normalize a tool response using a Pydantic model."""
 
-    return response_model.model_validate(response).model_dump(exclude_none=True)
+    validated = response_model.model_validate(response)
+    return validated.model_dump(exclude_none=True)
 
 
 def _register_tools(server: FastMCP) -> None:
     """Attach the pyCycle tool implementations to a FastMCP instance."""
 
-    @server.tool(
+    @_tool(
+        server,
         name="create_cycle_model",
         description="Instantiate a pyCycle/OpenMDAO Problem for a specified engine cycle.",
         tags={"pycycle", "model"},
@@ -70,7 +96,8 @@ def _register_tools(server: FastMCP) -> None:
         )
         return _validated_response(response, CreateCycleModelResponse)
 
-    @server.tool(
+    @_tool(
+        server,
         name="close_cycle_model",
         description="Close a pyCycle session and free resources.",
         tags={"pycycle", "session"},
@@ -81,7 +108,8 @@ def _register_tools(server: FastMCP) -> None:
         response = tools.create_model.close_cycle_model({"session_id": session_id})
         return _validated_response(response, CloseCycleModelResponse)
 
-    @server.tool(
+    @_tool(
+        server,
         name="get_cycle_summary",
         description="Return a succinct summary of the current cycle model.",
         tags={"pycycle", "summary"},
@@ -92,7 +120,8 @@ def _register_tools(server: FastMCP) -> None:
         response = tools.create_model.get_cycle_summary({"session_id": session_id})
         return _validated_response(response, CycleSummaryResponse)
 
-    @server.tool(
+    @_tool(
+        server,
         name="list_variables",
         description="List variables in the cycle model.",
         tags={"pycycle", "variables"},
@@ -101,14 +130,14 @@ def _register_tools(server: FastMCP) -> None:
     )
     def list_variables_tool(
         session_id: str,
-        kind: str = "both",
+        kind: Literal["inputs", "outputs", "both"] = "both",
         promoted_only: bool = True,
         name_filter: str | None = None,
         max_variables: int = 200,
     ) -> dict[str, Any]:
         request = ListVariablesRequest(
             session_id=session_id,
-            kind=kind,  # type: ignore[arg-type]
+            kind=kind,
             promoted_only=promoted_only,
             name_filter=name_filter,
             max_variables=max_variables,
@@ -116,7 +145,8 @@ def _register_tools(server: FastMCP) -> None:
         response = tools.variables.list_variables(request.model_dump(exclude_none=True))
         return _validated_response(response, ListVariablesResponse)
 
-    @server.tool(
+    @_tool(
+        server,
         name="set_inputs",
         description="Set one or more input variables in the cycle model.",
         tags={"pycycle", "variables"},
@@ -134,7 +164,8 @@ def _register_tools(server: FastMCP) -> None:
         response = tools.variables.set_inputs(request.model_dump())
         return _validated_response(response, SetInputsResponse)
 
-    @server.tool(
+    @_tool(
+        server,
         name="get_outputs",
         description="Fetch values for one or more outputs after a run.",
         tags={"pycycle", "variables"},
@@ -152,7 +183,8 @@ def _register_tools(server: FastMCP) -> None:
         response = tools.variables.get_outputs(request.model_dump())
         return _validated_response(response, GetOutputsResponse)
 
-    @server.tool(
+    @_tool(
+        server,
         name="run_cycle",
         description="Run the cycle model and return selected outputs.",
         tags={"pycycle", "execution"},
@@ -172,7 +204,8 @@ def _register_tools(server: FastMCP) -> None:
         response = tools.execution.run_cycle(request.model_dump())
         return _validated_response(response, RunCycleResponse)
 
-    @server.tool(
+    @_tool(
+        server,
         name="sweep_inputs",
         description="Perform a parametric sweep over input variables.",
         tags={"pycycle", "sweep"},
@@ -196,7 +229,8 @@ def _register_tools(server: FastMCP) -> None:
         response = tools.sweep.sweep_inputs(request.model_dump())
         return _validated_response(response, SweepInputsResponse)
 
-    @server.tool(
+    @_tool(
+        server,
         name="compute_totals",
         description="Compute total derivatives using OpenMDAO.",
         tags={"pycycle", "derivatives"},
@@ -207,13 +241,13 @@ def _register_tools(server: FastMCP) -> None:
         session_id: str,
         of: list[str],
         wrt: list[str],
-        return_format: str = "by_pair",
+        return_format: Literal["by_pair", "dense"] = "by_pair",
     ) -> dict[str, Any]:
         request = ComputeTotalsRequest(
             session_id=session_id,
             of=of,
             wrt=wrt,
-            return_format=return_format,  # type: ignore[arg-type]
+            return_format=return_format,
         )
         response = tools.derivatives.compute_totals(request.model_dump())
         return _validated_response(response, ComputeTotalsResponse)

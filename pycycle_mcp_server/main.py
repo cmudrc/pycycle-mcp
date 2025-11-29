@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Iterable, Mapping
-from typing import Any
+from typing import Any, Protocol
 
 import anyio
 from fastmcp.tools.tool import ToolResult
@@ -14,22 +14,29 @@ from .fastmcp_server import build_server
 from .runtime import ServerSettings, configure_logging, run_server
 
 
+class ToolLike(Protocol):
+    """Minimal tool surface used for CLI rendering."""
+
+    name: str
+    description: str | None
+
+
 def _render_tool_result(result: ToolResult) -> dict[str, Any]:
     """Convert a :class:`ToolResult` into a JSON-serializable mapping."""
 
     if result.structured_content is not None:
-        return result.structured_content  # type: ignore[return-value]
+        return result.structured_content
     if isinstance(result.content, list):
         return {"content": [str(item) for item in result.content]}
     return {"content": result.content}
 
 
-def _list_tools(server_output: Mapping[str, Any] | Iterable[Any]) -> None:
+def _list_tools(server_output: Mapping[str, ToolLike] | Iterable[ToolLike]) -> None:
     tools = (
         server_output.values() if isinstance(server_output, Mapping) else server_output
     )
     for tool in tools:
-        description = getattr(tool, "description", "") or ""
+        description = tool.description or ""
         print(f"{tool.name}: {description}")
 
 
