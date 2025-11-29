@@ -9,6 +9,7 @@ from pycycle_mcp_server.main import cli
 
 def test_build_server_exposes_schemas() -> None:
     server = fastmcp_server.build_server()
+
     tool = anyio.run(server.get_tool, "compute_totals")
 
     assert tool.output_schema is not None
@@ -33,6 +34,7 @@ def test_create_cycle_model_wrapper_returns_structured(
     )
     server = fastmcp_server.build_server()
     tool = anyio.run(server.get_tool, "create_cycle_model")
+
     result = anyio.run(
         tool.run,
         {
@@ -52,5 +54,6 @@ def test_cli_lists_fastmcp_tools(capsys: CaptureFixture[str]) -> None:
     exit_code = cli(["--list-tools"])
 
     captured = capsys.readouterr()
+
     assert exit_code == 0
     assert "create_cycle_model" in captured.out
