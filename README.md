@@ -7,8 +7,8 @@ A lightweight MCP-style server that exposes pyCycle/OpenMDAO engine cycle models
 - Create, configure, and close pyCycle engine cycle models (turbofan, turbojet, turboshaft, or custom).
 - List inputs/outputs, set inputs, and fetch outputs with structured JSON results.
 - Execute models, run parametric sweeps, and compute total derivatives via OpenMDAO.
-- FastMCP-based server with explicit JSON Schemas for each tool.
-- Minimal CLI for invoking tools locally or running the FastMCP server: `python -m pycycle_mcp_server --tool ... --payload ...` or `python -m pycycle_mcp_server --serve`.
+- FastMCP-based server with explicit JSON Schemas for each tool, plus a lightweight `ping` tool that works without pyCycle/OpenMDAO installed.
+- Console script `pycycle-mcp-server` that mirrors the tigl-mcp/su2-mcp CLI shape (stdio or HTTP transports).
 
 ## Installation
 
@@ -21,37 +21,21 @@ python -m pip install .[dev]    # installs lint/test dependencies
 
 ## Usage
 
-Create a turbofan session in design mode:
+Run the server over stdio (default):
 
 ```bash
-python -m pycycle_mcp_server \
-  --tool create_cycle_model \
-  --payload '{"cycle_type":"turbofan","mode":"design"}'
+pycycle-mcp-server --transport stdio
 ```
 
-List variables from an existing session:
+Expose the server over HTTP/streamable-http (the CLI normalizes `--transport http` to `streamable-http` for compatibility):
 
 ```bash
-python -m pycycle_mcp_server \
-  --tool list_variables \
-  --payload '{"session_id":"<session>","kind":"inputs"}'
+pycycle-mcp-server --transport http --host 0.0.0.0 --port 8000 --path /mcp
 ```
 
-Run the model and retrieve key outputs:
+Call the lightweight ping tool through any MCP client to verify the server is healthy even when pyCycle/OpenMDAO are missing.
 
-```bash
-python -m pycycle_mcp_server \
-  --tool run_cycle \
-  --payload '{"session_id":"<session>","outputs_of_interest":["Fn","TSFC"]}'
-```
-
-Run the FastMCP server over stdio (default) or HTTP transports:
-
-```bash
-python -m pycycle_mcp_server --serve --transport streamable-http --host 0.0.0.0 --port 8000
-```
-
-The tool functions are pure Python callables and can be imported directly for use inside a larger MCP host. A convenience `build_server` factory is available via `pycycle_mcp_server.fastmcp_server.build_server`.
+The tool functions are pure Python callables and can be imported directly for use inside a larger MCP host. A convenience `build_server` factory is available via `pycycle_mcp_server.fastmcp_server.build_server`, and `python -m pycycle_mcp_server --serve ...` remains supported for legacy workflows.
 
 ## Development
 

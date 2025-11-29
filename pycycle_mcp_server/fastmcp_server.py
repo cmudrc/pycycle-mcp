@@ -7,6 +7,7 @@ from collections.abc import Callable
 from typing import Any, Literal, TypedDict, TypeVar, cast
 
 from fastmcp.server import FastMCP
+from fastmcp.tools.tool import FunctionTool
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel
 from typing_extensions import Unpack
@@ -31,6 +32,7 @@ from .schemas import (
     SweepInputsResponse,
     SweepVariable,
 )
+from .tools import PingResponse
 
 __all__ = ["build_server", "tools"]
 
@@ -70,6 +72,16 @@ def _validated_response(
 
 def _register_tools(server: FastMCP) -> None:
     """Attach the pyCycle tool implementations to a FastMCP instance."""
+
+    server.add_tool(
+        FunctionTool.from_function(
+            tools.ping,
+            name="ping",
+            description="Simple healthcheck for the pyCycle MCP server.",
+            annotations=ToolAnnotations(title="Ping", readOnlyHint=True),
+            output_schema=PingResponse.model_json_schema(),
+        )
+    )
 
     @_tool(
         server,

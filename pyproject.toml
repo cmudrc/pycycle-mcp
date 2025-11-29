@@ -25,7 +25,7 @@ dev = [
 ]
 
 [project.scripts]
-pycycle-mcp = "pycycle_mcp_server.main:cli"
+pycycle-mcp-server = "pycycle_mcp_server.__main__:main"
 
 [tool.black]
 target-version = ["py310"]

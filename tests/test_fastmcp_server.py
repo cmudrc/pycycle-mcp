@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import anyio
-from pytest import CaptureFixture, MonkeyPatch
+from pytest import MonkeyPatch
 
+from pycycle_mcp_server import __main__ as cli
 from pycycle_mcp_server import fastmcp_server
-from pycycle_mcp_server.main import cli
 
 
 def test_build_server_exposes_schemas() -> None:
@@ -15,6 +15,16 @@ def test_build_server_exposes_schemas() -> None:
     assert tool.output_schema is not None
     assert tool.output_schema["type"] == "object"
     assert "jacobian" in tool.output_schema.get("properties", {})
+
+
+def test_ping_tool_is_registered() -> None:
+    server = fastmcp_server.build_server()
+
+    tool = anyio.run(server.get_tool, "ping")
+    result = anyio.run(tool.run, {})
+
+    assert result.structured_content is not None
+    assert result.structured_content["server"] == "pycycle-mcp"
 
 
 def test_create_cycle_model_wrapper_returns_structured(
@@ -50,10 +60,28 @@ def test_create_cycle_model_wrapper_returns_structured(
     assert result.structured_content["model_name"] == "demo"
 
 
-def test_cli_lists_fastmcp_tools(capsys: CaptureFixture[str]) -> None:
-    exit_code = cli(["--list-tools"])
+def test_main_normalizes_http_transport(monkeypatch: MonkeyPatch) -> None:
+    recorded: list[dict[str, object]] = []
 
-    captured = capsys.readouterr()
+    class DummyServer:
+        def run(
+            self, **kwargs: object
+        ) -> None:  # pragma: no cover - simple data capture
+            recorded.append(kwargs)
+
+    monkeypatch.setattr(cli, "build_server", lambda: DummyServer())
+
+    exit_code = cli.main(
+        ["--transport", "http", "--host", "0.0.0.0", "--port", "9001", "--path", "/mcp"]
+    )
 
     assert exit_code == 0
-    assert "create_cycle_model" in captured.out
+    assert recorded == [
+        {
+            "transport": "streamable-http",
+            "host": "0.0.0.0",
+            "port": 9001,
+            "path": "/mcp",
+            "show_banner": False,
+        }
+    ]
