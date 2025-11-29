@@ -4,6 +4,7 @@ from typing import cast
 
 from pycycle_mcp_server.session_manager import session_manager
 from pycycle_mcp_server.tools import execution, variables
+from pycycle_mcp_server.types import CycleProblem
 
 from .conftest import DummyProblem
 
@@ -20,7 +21,7 @@ def setup_dummy_session() -> str:
         ("Fn", {"promoted_name": "Fn", "units": "lbf", "desc": "Thrust", "val": 0.0})
     ]
     return session_manager.create_session(
-        problem=problem, meta={"mode": "design", "options": {}}
+        problem=cast(CycleProblem, problem), meta={"mode": "design", "options": {}}
     )
 
 

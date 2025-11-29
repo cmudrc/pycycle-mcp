@@ -22,9 +22,9 @@ class DummyModel:
 
 class DummyProblem:
     def __init__(self) -> None:
-        self.model = DummyModel()
+        self.model: DummyModel = DummyModel()
         self.values: dict[str, object] = {}
-        self.iter_count = 0
+        self.iter_count: int = 0
 
     def set_val(
         self, name: str | None = None, value: object | None = None, **kwargs: object
@@ -46,5 +46,11 @@ class DummyProblem:
     def run_driver(self) -> None:
         self.iter_count += 1
 
-    def compute_totals(self, of: list[str], wrt: list[str]) -> dict[tuple[str, str], object]:
+    def setup(self) -> None:
+        """Placeholder to satisfy the CycleProblem protocol."""
+        return None
+
+    def compute_totals(
+        self, of: list[str], wrt: list[str]
+    ) -> dict[tuple[str, str], object]:
         return {(o, w): [[1.0]] for o in of for w in wrt}

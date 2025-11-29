@@ -18,7 +18,9 @@ def list_variables(payload: dict[str, object]) -> dict[str, object]:
     promoted_only = payload.get("promoted_only", True)
     name_filter = payload.get("name_filter")
     max_variables_raw = payload.get("max_variables", 200)
-    max_variables = int(max_variables_raw) if isinstance(max_variables_raw, (int, str)) else 200
+    max_variables = (
+        int(max_variables_raw) if isinstance(max_variables_raw, (int, str)) else 200
+    )
 
     try:
         problem, _ = session_manager.get(str(session_id))

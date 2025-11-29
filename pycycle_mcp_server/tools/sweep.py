@@ -15,7 +15,9 @@ def sweep_inputs(payload: dict[str, object]) -> dict[str, object]:
     sweep_spec_raw = payload.get("sweep") or []
     sweep_spec = sweep_spec_raw if isinstance(sweep_spec_raw, list) else []
     outputs_raw = payload.get("outputs_of_interest") or []
-    outputs_of_interest: list[str] = outputs_raw if isinstance(outputs_raw, list) else []
+    outputs_of_interest: list[str] = (
+        outputs_raw if isinstance(outputs_raw, list) else []
+    )
     use_driver = bool(payload.get("use_driver", False))
     skip_on_failure = bool(payload.get("skip_on_failure", True))
 
@@ -28,7 +30,9 @@ def sweep_inputs(payload: dict[str, object]) -> dict[str, object]:
 
     try:
         problem, _ = session_manager.get(str(session_id))
-        variables = [entry.get("name") for entry in sweep_spec if isinstance(entry, dict)]
+        variables = [
+            entry.get("name") for entry in sweep_spec if isinstance(entry, dict)
+        ]
         value_sets = [
             entry.get("values", []) if isinstance(entry.get("values"), list) else []
             for entry in sweep_spec

@@ -9,7 +9,9 @@ from ..session_manager import session_manager
 from ..utils import error_on_missing_session
 
 
-def _format_by_pair(jacobian: dict[tuple[str, str], object]) -> dict[str, dict[str, object]]:
+def _format_by_pair(
+    jacobian: dict[tuple[str, str], object],
+) -> dict[str, dict[str, object]]:
     formatted: dict[str, dict[str, object]] = {}
     for (of, wrt), value in jacobian.items():
         formatted.setdefault(of, {})[wrt] = (

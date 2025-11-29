@@ -7,6 +7,7 @@ import pytest
 
 from pycycle_mcp_server.session_manager import session_manager
 from pycycle_mcp_server.tools import create_model
+from pycycle_mcp_server.types import CycleProblem
 
 from .conftest import DummyModel, DummyProblem
 
@@ -50,7 +51,7 @@ def test_get_cycle_summary(monkeypatch: pytest.MonkeyPatch) -> None:
         ("Fn", {"units": "lbf", "desc": "Net thrust", "val": 1000})
     ]
     session_id = session_manager.create_session(
-        problem=problem, meta={"mode": "design", "options": {}}
+        problem=cast(CycleProblem, problem), meta={"mode": "design", "options": {}}
     )
 
     response = create_model.get_cycle_summary({"session_id": session_id})

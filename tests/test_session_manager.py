@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from typing import cast
+
 from pycycle_mcp_server.session_manager import SessionManager
+from pycycle_mcp_server.types import CycleProblem
 
 from .conftest import DummyProblem
 
 
 def test_session_lifecycle() -> None:
     manager = SessionManager()
-    problem_obj = DummyProblem()
+    problem_obj = cast(CycleProblem, DummyProblem())
     session_id = manager.create_session(problem=problem_obj, meta={"mode": "design"})
     problem, meta = manager.get(session_id)
 

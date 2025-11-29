@@ -4,6 +4,7 @@ from typing import cast
 
 from pycycle_mcp_server.session_manager import session_manager
 from pycycle_mcp_server.tools import derivatives, sweep
+from pycycle_mcp_server.types import CycleProblem
 
 from .conftest import DummyProblem
 
@@ -12,7 +13,7 @@ def test_sweep_inputs_success() -> None:
     problem = DummyProblem()
     problem.model.inputs = [("Mach", {"promoted_name": "Mach"})]
     session_id = session_manager.create_session(
-        problem=problem, meta={"mode": "design", "options": {}}
+        problem=cast(CycleProblem, problem), meta={"mode": "design", "options": {}}
     )
 
     result = sweep.sweep_inputs(
@@ -31,7 +32,7 @@ def test_sweep_inputs_success() -> None:
 def test_compute_totals_formats_by_pair() -> None:
     problem = DummyProblem()
     session_id = session_manager.create_session(
-        problem=problem, meta={"mode": "design", "options": {}}
+        problem=cast(CycleProblem, problem), meta={"mode": "design", "options": {}}
     )
 
     result = derivatives.compute_totals(
