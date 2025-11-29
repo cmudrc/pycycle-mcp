@@ -1,13 +1,14 @@
 # pycycle-mcp
 
-A lightweight MCP-style server that exposes pyCycle/OpenMDAO engine cycle models as JSON-schema tools. The server maintains an in-memory mapping of `session_id` to OpenMDAO `Problem` instances so multiple cycles can be configured and evaluated in one process.
+A lightweight MCP-style server that exposes pyCycle/OpenMDAO engine cycle models as JSON-schema tools via FastMCP. The server maintains an in-memory mapping of `session_id` to OpenMDAO `Problem` instances so multiple cycles can be configured and evaluated in one process.
 
 ## Features
 
 - Create, configure, and close pyCycle engine cycle models (turbofan, turbojet, turboshaft, or custom).
 - List inputs/outputs, set inputs, and fetch outputs with structured JSON results.
 - Execute models, run parametric sweeps, and compute total derivatives via OpenMDAO.
-- Minimal CLI for invoking tools locally: `python -m pycycle_mcp_server --tool ... --payload ...`.
+- FastMCP-based server with explicit JSON Schemas for each tool.
+- Minimal CLI for invoking tools locally or running the FastMCP server: `python -m pycycle_mcp_server --tool ... --payload ...` or `python -m pycycle_mcp_server --serve`.
 
 ## Installation
 
@@ -44,7 +45,13 @@ python -m pycycle_mcp_server \
   --payload '{"session_id":"<session>","outputs_of_interest":["Fn","TSFC"]}'
 ```
 
-The tool functions are pure Python callables and can be imported directly for use inside a larger MCP host.
+Run the FastMCP server over stdio (default) or HTTP transports:
+
+```bash
+python -m pycycle_mcp_server --serve --transport streamable-http --host 0.0.0.0 --port 8000
+```
+
+The tool functions are pure Python callables and can be imported directly for use inside a larger MCP host. A convenience `build_server` factory is available via `pycycle_mcp_server.fastmcp_server.build_server`.
 
 ## Development
 
@@ -65,4 +72,4 @@ mypy .
 pytest
 ```
 
-The repository uses a small helper CLI rather than a full MCP host. Integrators can wrap the tool functions in their preferred transport.
+The repository uses a FastMCP-powered helper CLI rather than a bespoke host. Integrators can reuse the FastMCP server or wrap the tool functions in their preferred transport.
