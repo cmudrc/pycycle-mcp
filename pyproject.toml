@@ -1,0 +1,43 @@
+[project]
+name = "pycycle-mcp-server"
+version = "0.1.0"
+description = "MCP-style server exposing pyCycle/OpenMDAO engine cycle tools"
+authors = [{ name = "OpenAI Assistant" }]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+full = [
+  "openmdao>=3.27.0",
+  "pycycle>=3.0.0",
+]
+dev = [
+  "black>=24.0.0",
+  "ruff>=0.4.0",
+  "mypy>=1.8.0",
+  "pytest>=8.0.0",
+  "pytest-cov>=4.1.0",
+]
+
+[project.scripts]
+pycycle-mcp = "pycycle_mcp_server.main:cli"
+
+[tool.black]
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ANN"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+strict = true
+exclude = "build/"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
