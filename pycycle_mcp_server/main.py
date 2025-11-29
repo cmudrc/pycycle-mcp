@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
-from typing import Any, Iterable, Mapping
+from collections.abc import Iterable, Mapping
+from typing import Any
 
 import anyio
 from fastmcp.tools.tool import ToolResult

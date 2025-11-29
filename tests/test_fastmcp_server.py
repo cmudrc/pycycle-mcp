@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import anyio
+from pytest import CaptureFixture, MonkeyPatch
 
 from pycycle_mcp_server import fastmcp_server
 from pycycle_mcp_server.main import cli
@@ -14,7 +15,7 @@ def test_build_server_exposes_schemas() -> None:
     assert "jacobian" in tool.output_schema.get("properties", {})
 
 
-def test_create_cycle_model_wrapper_returns_structured(monkeypatch) -> None:
+def test_create_cycle_model_wrapper_returns_structured(monkeypatch: MonkeyPatch) -> None:
     def fake_create(payload: dict[str, object]) -> dict[str, object]:
         assert payload["cycle_type"] == "custom"
         return {
@@ -43,7 +44,7 @@ def test_create_cycle_model_wrapper_returns_structured(monkeypatch) -> None:
     assert result.structured_content["model_name"] == "demo"
 
 
-def test_cli_lists_fastmcp_tools(capsys) -> None:
+def test_cli_lists_fastmcp_tools(capsys: CaptureFixture[str]) -> None:
     exit_code = cli(["--list-tools"])
 
     captured = capsys.readouterr()

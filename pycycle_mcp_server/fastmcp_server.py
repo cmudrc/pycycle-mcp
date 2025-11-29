@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 from fastmcp.server import FastMCP
 from mcp.types import ToolAnnotations
