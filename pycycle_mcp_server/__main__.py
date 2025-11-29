@@ -68,13 +68,21 @@ def main(argv: list[str] | None = None) -> int:
     transport: Transport = _normalize_transport(args.transport)
 
     server = build_server()
-    server.run(
-        transport=transport,
-        host=args.host,
-        port=args.port,
-        path=args.path,
-        show_banner=False,
-    )
+    # backwards compat: treat "http" as "streamable-http" if you want
+    if transport == "http":
+        transport = "streamable-http"
+    
+    if transport == "stdio":
+        # stdio: no host/port – they don't make sense here.
+        server.run(transport="stdio")
+    else:
+        # network transports: host/port apply
+        server.run(
+            transport=transport,
+            host=args.host,
+            port=args.port,
+            http_path=args.path,  # or whatever FastMCP expects for this transport
+        )
     return 0
 
 
