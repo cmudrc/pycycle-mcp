@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "pycycle-mcp-server"
 version = "0.1.0"
@@ -26,6 +30,9 @@ dev = [
 
 [project.scripts]
 pycycle-mcp-server = "pycycle_mcp_server.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["pycycle_mcp_server*"]
 
 [tool.black]
 target-version = ["py310"]
