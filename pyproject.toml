@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "pycycle-mcp-server"
 version = "0.1.0"
@@ -14,7 +18,7 @@ dependencies = [
 [project.optional-dependencies]
 full = [
   "openmdao>=3.27.0",
-  "pycycle>=3.0.0",
+  "om-pycycle @ git+https://github.com/OpenMDAO/pyCycle.git",
 ]
 dev = [
   "black>=24.0.0",
@@ -26,6 +30,9 @@ dev = [
 
 [project.scripts]
 pycycle-mcp-server = "pycycle_mcp_server.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["pycycle_mcp_server*"]
 
 [tool.black]
 target-version = ["py310"]

@@ -24,22 +24,30 @@ CycleBuilder = Callable[[], object]
 
 
 def _resolve_builtin_cycle(cycle_type: str) -> tuple[str, CycleBuilder]:
-    """Resolve a built-in cycle type to a callable builder."""
+    """Resolve a built-in cycle type to a callable builder.
+
+    NASA pyCycle provides engine components (Compressor, Turbine, etc.)
+    rather than ready-made engine classes. We ship bundled cycle definitions
+    that wire those components into complete engine models.
+    """
 
     try:
-        import pycycle.api as pyc_api
-    except Exception as exc:  # pragma: no cover - exercised via tests
-        raise ImportError("pycycle is required for built-in cycle types") from exc
+        import pycycle.api as pyc_api  # noqa: F401 – verify pycycle is installed
+    except Exception as exc:
+        raise ImportError("pycycle (om-pycycle) is required for built-in cycle types") from exc
+
+    from ..cycles.high_bypass_turbofan import HBTF
+    from ..cycles.simple_turbojet import Turbojet
 
     mapping: dict[str, CycleBuilder] = {
-        "turbofan": pyc_api.Turbofan,
-        "turbojet": pyc_api.Turbojet,
-        "turboshaft": pyc_api.Turboshaft,
+        "turbofan": lambda: HBTF(thermo_method="CEA"),
+        "turbojet": lambda: Turbojet(),
     }
     builder = mapping.get(cycle_type)
     if builder is None:
-        raise ValueError(f"Unsupported cycle type: {cycle_type}")
-    return builder.__name__, builder
+        supported = ", ".join(sorted(mapping.keys()))
+        raise ValueError(f"Unsupported cycle type: {cycle_type}. Supported: {supported}")
+    return cycle_type, builder
 
 
 def _build_problem(
@@ -47,33 +55,68 @@ def _build_problem(
 ) -> tuple[CycleProblem, str]:
     try:
         from openmdao.api import Problem
-    except Exception as exc:  # pragma: no cover - import failure path
+    except Exception as exc:
         raise ImportError("openmdao is required to build cycle models") from exc
 
     problem: CycleProblem = Problem()
     model = builder()
     problem.model = model  # type: ignore[assignment]
 
-    if hasattr(model, "set_default_mode"):
-        try:
-            model.set_default_mode(mode)
-        except Exception as exc:  # pragma: no cover - depends on pycycle implementation
-            LOGGER.debug("Failed to apply mode defaults: %s", exc)
-    for key, value in options.items():
-        if hasattr(model, "set_input_defaults"):
-            try:
-                model.set_input_defaults(key, value)
-            except Exception:
-                problem.set_val(key, value)
-        else:
-            problem.set_val(key, value)
+    problem.setup(check=False)
 
-    problem.setup()
-    return problem, getattr(
-        model,
-        "name",
-        builder.__name__ if hasattr(builder, "__name__") else str(builder),
-    )
+    # Apply default design-point values for built-in cycles
+    _apply_design_defaults(problem, model, mode)
+
+    for key, value in options.items():
+        try:
+            problem.set_val(key, value)
+        except Exception as exc:
+            LOGGER.debug("Could not set %s=%s: %s", key, value, exc)
+
+    return problem, type(model).__name__
+
+
+def _apply_design_defaults(
+    problem: CycleProblem, model: object, mode: str
+) -> None:
+    """Set sensible design-point values so the model can run out of the box."""
+    from ..cycles.high_bypass_turbofan import HBTF
+    from ..cycles.simple_turbojet import Turbojet
+
+    if isinstance(model, HBTF):
+        problem.set_val("fan.PR", 1.685)
+        problem.set_val("fan.eff", 0.8948)
+        problem.set_val("lpc.PR", 1.935)
+        problem.set_val("lpc.eff", 0.9243)
+        problem.set_val("hpc.PR", 9.369)
+        problem.set_val("hpc.eff", 0.8707)
+        problem.set_val("hpt.eff", 0.8888)
+        problem.set_val("lpt.eff", 0.8996)
+        problem.set_val("fc.alt", 35000.0, units="ft")
+        problem.set_val("fc.MN", 0.8)
+        problem.set_val("T4_MAX", 2857.0, units="degR")
+        problem.set_val("Fn_DES", 5900.0, units="lbf")
+        # Initial guesses for Newton solver
+        problem["balance.FAR"] = 0.025
+        problem["balance.W"] = 100.0
+        problem["balance.lpt_PR"] = 4.0
+        problem["balance.hpt_PR"] = 3.0
+        problem["fc.balance.Pt"] = 5.2
+        problem["fc.balance.Tt"] = 440.0
+
+    elif isinstance(model, Turbojet):
+        problem.set_val("fc.alt", 0.0, units="ft")
+        problem.set_val("fc.MN", 0.000001)
+        problem.set_val("balance.Fn_target", 11800.0, units="lbf")
+        problem.set_val("balance.T4_target", 2370.0, units="degR")
+        problem.set_val("comp.PR", 13.5)
+        problem.set_val("comp.eff", 0.83)
+        problem.set_val("turb.eff", 0.86)
+        problem["balance.FAR"] = 0.0175
+        problem["balance.W"] = 168.0
+        problem["balance.turb_PR"] = 4.46
+        problem["fc.balance.Pt"] = 14.696
+        problem["fc.balance.Tt"] = 518.67
 
 
 def _extract_variables(

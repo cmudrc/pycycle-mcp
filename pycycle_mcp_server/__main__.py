@@ -81,7 +81,6 @@ def main(argv: list[str] | None = None) -> int:
             transport=transport,
             host=args.host,
             port=args.port,
-            http_path=args.path,  # or whatever FastMCP expects for this transport
         )
     return 0
 

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import logging
 
+import numpy as np
+
 from ..errors import error_response, to_error
 from ..session_manager import session_manager
 from ..utils import error_on_missing_session
@@ -11,12 +13,27 @@ from ..utils import error_on_missing_session
 LOGGER = logging.getLogger(__name__)
 
 DEFAULT_OUTPUTS = [
-    "Fn",  # net thrust
-    "Fnet",
-    "TSFC",
-    "eff",
-    "power",
+    "perf.Fn",
+    "perf.TSFC",
+    "perf.OPR",
+    "fc.Fl_O:stat:MN",
+    "fc.alt",
+    "splitter.BPR",
 ]
+
+
+def _to_serializable(val: object) -> object:
+    """Convert numpy types to native Python for JSON serialization."""
+    if isinstance(val, np.ndarray):
+        flat = val.flatten()
+        if flat.size == 1:
+            return float(flat[0])
+        return [float(v) for v in flat]
+    if isinstance(val, (np.floating, np.complexfloating)):
+        return float(val)
+    if isinstance(val, np.integer):
+        return int(val)
+    return val
 
 
 def run_cycle(payload: dict[str, object]) -> dict[str, object]:
@@ -33,6 +50,7 @@ def run_cycle(payload: dict[str, object]) -> dict[str, object]:
         problem, _ = session_manager.get(str(session_id))
         messages: list[str] = []
         try:
+            problem.set_solver_print(level=-1)
             if use_driver:
                 messages.append("Ran driver")
                 problem.run_driver()
@@ -46,20 +64,14 @@ def run_cycle(payload: dict[str, object]) -> dict[str, object]:
         outputs: dict[str, object | None] = {}
         for name in outputs_of_interest:
             try:
-                outputs[name] = problem.get_val(name)
+                outputs[name] = _to_serializable(problem.get_val(name))
             except Exception as exc:
                 outputs[name] = None
                 messages.append(f"Missing output {name}: {exc}")
-        converged = getattr(
-            getattr(problem, "_metadata", None), "get", lambda *_: None
-        )("converged", None)
 
         return {
             "success": True,
-            "converged": converged,
-            "iterations": getattr(problem, "iter_count", None),
             "outputs": outputs,
-            "residual_norm": getattr(problem, "_residual_norm", None),
             "messages": messages,
         }
     except KeyError as exc:
