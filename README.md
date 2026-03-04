@@ -71,7 +71,26 @@ This server is designed to work alongside [tigl-mcp](https://github.com/cmudrc/t
 2. **SU2 MCP** (port 8002): STEP → volume mesh → Euler CFD → CL/CD
 3. **pyCycle MCP** (port 8001): Flight conditions + drag → engine sizing (thrust, TSFC, fuel flow)
 
-The key data handoff: SU2's drag coefficient is converted to a thrust requirement (`Fn_DES`) which sizes the engine to overcome aircraft drag at cruise.
+The key data handoff: SU2's drag coefficient is converted to a thrust requirement (`Fn_DES = CD × q∞ × S_ref`) which sizes the engine to overcome aircraft drag at cruise.
+
+#### Config-driven pipeline
+
+The orchestration script (`pipeline/tigl_to_su2.py`) accepts a `pipeline_config.yaml` that controls all pipeline parameters including engine settings:
+
+```yaml
+engine:
+  type: turbofan           # turbofan | turbojet
+  default_thrust_lbf: 5900.0
+  # Uncomment to override NASA HBTF defaults:
+  # turbofan:
+  #   fan_pr: 1.685
+  #   hpc_pr: 9.369
+  #   t4_max_R: 2857.0
+```
+
+Engine design parameters that can be set via config or `set_inputs` MCP tool: `fan.PR`, `fan.eff`, `lpc.PR/eff`, `hpc.PR/eff`, `hpt.eff`, `lpt.eff`, `T4_MAX`, `Fn_DES`.
+
+Hardcoded internals (in the HBTF cycle definition): duct pressure losses, bleed fractions, nozzle velocity coefficients, shaft power extractions, Newton solver tolerances.
 
 ## Development
 
