@@ -14,7 +14,7 @@ dependencies = [
 [project.optional-dependencies]
 full = [
   "openmdao>=3.27.0",
-  "pycycle>=3.0.0",
+  "om-pycycle @ git+https://github.com/OpenMDAO/pyCycle.git",
 ]
 dev = [
   "black>=24.0.0",
