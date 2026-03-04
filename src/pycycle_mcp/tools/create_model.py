@@ -50,9 +50,7 @@ def _resolve_builtin_cycle(cycle_type: str) -> tuple[str, CycleBuilder]:
     return cycle_type, builder
 
 
-def _build_problem(
-    builder: CycleBuilder, mode: str, options: dict[str, object]
-) -> tuple[CycleProblem, str]:
+def _build_problem(builder: CycleBuilder, mode: str, options: dict[str, object]) -> tuple[CycleProblem, str]:
     try:
         from openmdao.api import Problem
     except Exception as exc:
@@ -76,9 +74,7 @@ def _build_problem(
     return problem, type(model).__name__
 
 
-def _apply_design_defaults(
-    problem: CycleProblem, model: object, mode: str
-) -> None:
+def _apply_design_defaults(problem: CycleProblem, model: object, mode: str) -> None:
     """Set sensible design-point values so the model can run out of the box."""
     from ..cycles.high_bypass_turbofan import HBTF
     from ..cycles.simple_turbojet import Turbojet
@@ -119,9 +115,7 @@ def _apply_design_defaults(
         problem["fc.balance.Tt"] = 518.67
 
 
-def _extract_variables(
-    problem: CycleProblem, target: str
-) -> list[tuple[str, dict[str, object]]]:
+def _extract_variables(problem: CycleProblem, target: str) -> list[tuple[str, dict[str, object]]]:
     if target == "inputs":
         items = problem.model.list_inputs(prom_name=True, out_stream=None)
     else:
@@ -135,23 +129,15 @@ def _summarize_variables(
     inputs = _extract_variables(problem, "inputs")
     outputs = _extract_variables(problem, "outputs")
 
-    interesting_inputs = select_interesting_variables(
-        inputs, INTERESTING_INPUT_KEYWORDS
-    )
-    interesting_outputs = select_interesting_variables(
-        outputs, INTERESTING_OUTPUT_KEYWORDS
-    )
+    interesting_inputs = select_interesting_variables(inputs, INTERESTING_INPUT_KEYWORDS)
+    interesting_outputs = select_interesting_variables(outputs, INTERESTING_OUTPUT_KEYWORDS)
 
-    def _render(
-        names: list[str], source: list[tuple[str, dict[str, object]]]
-    ) -> list[dict[str, object]]:
+    def _render(names: list[str], source: list[tuple[str, dict[str, object]]]) -> list[dict[str, object]]:
         rendered: list[dict[str, object]] = []
         metadata_map = {name: meta for name, meta in source}
         for name in names:
             meta = metadata_map.get(name, {})
-            rendered.append(
-                {"name": name, "units": meta.get("units"), "desc": meta.get("desc")}
-            )
+            rendered.append({"name": name, "units": meta.get("units"), "desc": meta.get("desc")})
         return rendered
 
     return _render(interesting_inputs, inputs), _render(interesting_outputs, outputs)
@@ -177,12 +163,8 @@ def create_cycle_model(payload: dict[str, object]) -> dict[str, object]:
         else:
             model_name, builder = _resolve_builtin_cycle(str(cycle_type))
 
-        problem, resolved_name = _build_problem(
-            builder=builder, mode=str(mode), options=options
-        )
-        session_id = session_manager.create_session(
-            problem=problem, meta={"mode": mode, "options": options}
-        )
+        problem, resolved_name = _build_problem(builder=builder, mode=str(mode), options=options)
+        session_id = session_manager.create_session(problem=problem, meta={"mode": mode, "options": options})
         top_inputs, top_outputs = _summarize_variables(problem)
 
         return {
@@ -234,8 +216,7 @@ def get_cycle_summary(payload: dict[str, object]) -> dict[str, object]:
                         "name": name,
                         "units": meta_entry.get("units"),
                         "desc": meta_entry.get("desc"),
-                        "current_value": meta_entry.get("val")
-                        or meta_entry.get("value"),
+                        "current_value": meta_entry.get("val") or meta_entry.get("value"),
                     }
                 )
             return rendered

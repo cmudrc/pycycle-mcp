@@ -22,9 +22,7 @@ class SessionManager:
     def __init__(self) -> None:
         self._sessions: dict[str, SessionRecord] = {}
 
-    def create_session(
-        self, problem: CycleProblem, meta: dict[str, object] | None = None
-    ) -> str:
+    def create_session(self, problem: CycleProblem, meta: dict[str, object] | None = None) -> str:
         """Register a new session and return its identifier."""
 
         session_id = str(uuid.uuid4())

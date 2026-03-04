@@ -8,9 +8,7 @@ from pydantic import BaseModel, Field
 class PingRequest(BaseModel):
     """Request payload for the :func:`ping` tool."""
 
-    message: str | None = Field(
-        default=None, description="Optional echo message included in the response."
-    )
+    message: str | None = Field(default=None, description="Optional echo message included in the response.")
 
 
 class PingResponse(BaseModel):

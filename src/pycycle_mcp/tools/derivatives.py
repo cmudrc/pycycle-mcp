@@ -14,9 +14,7 @@ def _format_by_pair(
 ) -> dict[str, dict[str, object]]:
     formatted: dict[str, dict[str, object]] = {}
     for (of, wrt), value in jacobian.items():
-        formatted.setdefault(of, {})[wrt] = (
-            value.tolist() if hasattr(value, "tolist") else value
-        )
+        formatted.setdefault(of, {})[wrt] = value.tolist() if hasattr(value, "tolist") else value
     return formatted
 
 

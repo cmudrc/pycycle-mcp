@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from typing import Any, Literal, TypedDict, TypeVar, cast
+from typing import Any, Literal, TypedDict, TypeVar, Unpack, cast
 
 from fastmcp.server import FastMCP
 from fastmcp.tools.tool import FunctionTool
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel
-from typing_extensions import Unpack
 
 from . import tools
 from .schemas import (
@@ -53,17 +52,13 @@ class ToolKwargs(TypedDict, total=False):
     annotations: ToolAnnotations | dict[str, Any] | None
 
 
-def _tool(
-    server: FastMCP, **kwargs: Unpack[ToolKwargs]
-) -> Callable[[ToolFunc], ToolFunc]:
+def _tool(server: FastMCP, **kwargs: Unpack[ToolKwargs]) -> Callable[[ToolFunc], ToolFunc]:
     """Typed wrapper around :meth:`FastMCP.tool` to satisfy type checkers."""
 
     return cast(Callable[[ToolFunc], ToolFunc], server.tool(**kwargs))
 
 
-def _validated_response(
-    response: dict[str, Any], response_model: type[ResponseModel]
-) -> dict[str, Any]:
+def _validated_response(response: dict[str, Any], response_model: type[ResponseModel]) -> dict[str, Any]:
     """Validate and normalize a tool response using a Pydantic model."""
 
     validated = response_model.model_validate(response)
@@ -103,9 +98,7 @@ def _register_tools(server: FastMCP) -> None:
             options=options or {},
             cycle_module_path=cycle_module_path,
         )
-        response = tools.create_model.create_cycle_model(
-            request.model_dump(exclude_none=True)
-        )
+        response = tools.create_model.create_cycle_model(request.model_dump(exclude_none=True))
         return _validated_response(response, CreateCycleModelResponse)
 
     @_tool(
@@ -170,9 +163,7 @@ def _register_tools(server: FastMCP) -> None:
         values: dict[str, Any],
         allow_missing: bool = False,
     ) -> dict[str, Any]:
-        request = SetInputsRequest(
-            session_id=session_id, values=values, allow_missing=allow_missing
-        )
+        request = SetInputsRequest(session_id=session_id, values=values, allow_missing=allow_missing)
         response = tools.variables.set_inputs(request.model_dump())
         return _validated_response(response, SetInputsResponse)
 
@@ -189,9 +180,7 @@ def _register_tools(server: FastMCP) -> None:
         names: list[str],
         allow_missing: bool = False,
     ) -> dict[str, Any]:
-        request = GetOutputsRequest(
-            session_id=session_id, names=names, allow_missing=allow_missing
-        )
+        request = GetOutputsRequest(session_id=session_id, names=names, allow_missing=allow_missing)
         response = tools.variables.get_outputs(request.model_dump())
         return _validated_response(response, GetOutputsResponse)
 
@@ -270,9 +259,7 @@ def build_server() -> FastMCP:
 
     server = FastMCP(
         name="pycycle-mcp",
-        instructions=(
-            "Expose pyCycle/OpenMDAO utilities for creating and running engine cycle models."
-        ),
+        instructions=("Expose pyCycle/OpenMDAO utilities for creating and running engine cycle models."),
         strict_input_validation=True,
     )
     _register_tools(server)

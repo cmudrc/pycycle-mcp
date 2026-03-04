@@ -18,18 +18,14 @@ def list_variables(payload: dict[str, object]) -> dict[str, object]:
     promoted_only = payload.get("promoted_only", True)
     name_filter = payload.get("name_filter")
     max_variables_raw = payload.get("max_variables", 200)
-    max_variables = (
-        int(max_variables_raw) if isinstance(max_variables_raw, (int, str)) else 200
-    )
+    max_variables = int(max_variables_raw) if isinstance(max_variables_raw, (int, str)) else 200
 
     try:
         problem, _ = session_manager.get(str(session_id))
         results: list[dict[str, object]] = []
 
         if kind in ("inputs", "both"):
-            for name, metadata in problem.model.list_inputs(
-                prom_name=True, out_stream=None
-            ):
+            for name, metadata in problem.model.list_inputs(prom_name=True, out_stream=None):
                 if promoted_only and metadata.get("promoted_name") not in (None, name):
                     continue
                 if name_filter and str(name_filter).lower() not in name.lower():
@@ -37,9 +33,7 @@ def list_variables(payload: dict[str, object]) -> dict[str, object]:
                 results.append(render_variable_entry(name, metadata, "input"))
 
         if kind in ("outputs", "both"):
-            for name, metadata in problem.model.list_outputs(
-                prom_name=True, out_stream=None
-            ):
+            for name, metadata in problem.model.list_outputs(prom_name=True, out_stream=None):
                 if promoted_only and metadata.get("promoted_name") not in (None, name):
                     continue
                 if name_filter and str(name_filter).lower() not in name.lower():
@@ -63,9 +57,7 @@ def set_inputs(payload: dict[str, object]) -> dict[str, object]:
     if not session_id:
         return error_response("ValidationError", "session_id is required")
     if not values:
-        return error_response(
-            "ValidationError", "values must contain at least one entry"
-        )
+        return error_response("ValidationError", "values must contain at least one entry")
 
     try:
         problem, _ = session_manager.get(str(session_id))
@@ -99,9 +91,7 @@ def get_outputs(payload: dict[str, object]) -> dict[str, object]:
     if not session_id:
         return error_response("ValidationError", "session_id is required")
     if not names:
-        return error_response(
-            "ValidationError", "names must contain at least one entry"
-        )
+        return error_response("ValidationError", "names must contain at least one entry")
 
     try:
         problem, _ = session_manager.get(str(session_id))

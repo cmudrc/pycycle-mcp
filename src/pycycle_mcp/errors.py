@@ -35,9 +35,7 @@ class MCPError:
         }
 
 
-def error_response(
-    error_type: str, message: str, details: object | None = None
-) -> dict[str, object]:
+def error_response(error_type: str, message: str, details: object | None = None) -> dict[str, object]:
     """Return a standardized MCP error response.
 
     Args:
@@ -49,9 +47,7 @@ def error_response(
         A mapping that matches the MCP error envelope.
     """
 
-    return MCPError(
-        error_type=error_type, message=message, details=details
-    ).to_response()
+    return MCPError(error_type=error_type, message=message, details=details).to_response()
 
 
 def to_error(err: Exception) -> dict[str, object]:

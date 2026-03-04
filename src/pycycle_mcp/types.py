@@ -31,9 +31,7 @@ class CycleProblem(Protocol):
     ) -> None:  # pragma: no cover
         ...
 
-    def get_val(
-        self, name: str, units: str | None = None
-    ) -> object:  # pragma: no cover
+    def get_val(self, name: str, units: str | None = None) -> object:  # pragma: no cover
         ...
 
     def run_model(self) -> None:  # pragma: no cover
@@ -42,10 +40,14 @@ class CycleProblem(Protocol):
     def run_driver(self) -> None:  # pragma: no cover
         ...
 
-    def setup(self) -> None:  # pragma: no cover
+    def setup(self, check: bool = False) -> None:  # pragma: no cover
         ...
 
-    def compute_totals(
-        self, of: list[str], wrt: list[str]
-    ) -> dict[tuple[str, str], object]:  # pragma: no cover
+    def set_solver_print(self, level: int = 0) -> None:  # pragma: no cover
+        ...
+
+    def __setitem__(self, name: str, value: object) -> None:  # pragma: no cover
+        ...
+
+    def compute_totals(self, of: list[str], wrt: list[str]) -> dict[tuple[str, str], object]:  # pragma: no cover
         ...

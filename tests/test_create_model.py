@@ -5,9 +5,9 @@ from typing import cast
 
 import pytest
 
-from pycycle_mcp_server.session_manager import session_manager
-from pycycle_mcp_server.tools import create_model
-from pycycle_mcp_server.types import CycleProblem
+from pycycle_mcp.session_manager import session_manager
+from pycycle_mcp.tools import create_model
+from pycycle_mcp.types import CycleProblem
 
 from .conftest import DummyModel, DummyProblem
 
@@ -47,9 +47,7 @@ def test_create_cycle_model_custom(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_get_cycle_summary(monkeypatch: pytest.MonkeyPatch) -> None:
     problem = DummyProblem()
     problem.model.inputs = [("alt", {"units": "ft", "desc": "Altitude", "val": 35000})]
-    problem.model.outputs = [
-        ("Fn", {"units": "lbf", "desc": "Net thrust", "val": 1000})
-    ]
+    problem.model.outputs = [("Fn", {"units": "lbf", "desc": "Net thrust", "val": 1000})]
     session_id = session_manager.create_session(
         problem=cast(CycleProblem, problem), meta={"mode": "design", "options": {}}
     )

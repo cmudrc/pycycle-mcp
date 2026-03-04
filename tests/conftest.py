@@ -26,9 +26,7 @@ class DummyProblem:
         self.values: dict[str, object] = {}
         self.iter_count: int = 0
 
-    def set_val(
-        self, name: str | None = None, value: object | None = None, **kwargs: object
-    ) -> None:
+    def set_val(self, name: str | None = None, value: object | None = None, **kwargs: object) -> None:
         if name is None:
             for key, val in kwargs.items():
                 self.values[key] = val
@@ -46,11 +44,12 @@ class DummyProblem:
     def run_driver(self) -> None:
         self.iter_count += 1
 
+    def set_solver_print(self, level: int = 0) -> None:
+        del level
+
     def setup(self) -> None:
         """Placeholder to satisfy the CycleProblem protocol."""
         return None
 
-    def compute_totals(
-        self, of: list[str], wrt: list[str]
-    ) -> dict[tuple[str, str], object]:
+    def compute_totals(self, of: list[str], wrt: list[str]) -> dict[tuple[str, str], object]:
         return {(o, w): [[1.0]] for o in of for w in wrt}
