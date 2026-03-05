@@ -7,7 +7,11 @@ name = "pycycle-mcp"
 version = "0.1.0"
 description = "An MCP around pyCycle/OpenMDAO cycle workflows"
 authors = [
-  { name = "pycycle-mcp contributors" }
+  { name = "The Design Research Collective", email = "ask-drc@cmu.edu" }
+]
+maintainers = [
+  { name = "Mayank Dixit", email = "mayankd@andrew.cmu.edu" },
+  { name = "Christopher McComb", email = "ccm@cmu.edu" },
 ]
 readme = "README.md"
 requires-python = ">=3.12"
