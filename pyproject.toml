@@ -31,7 +31,6 @@ Documentation = "https://cmudrc.github.io/pycycle-mcp/"
 [project.optional-dependencies]
 full = [
   "openmdao>=3.27.0",
-  "om-pycycle @ git+https://github.com/OpenMDAO/pyCycle.git",
 ]
 dev = [
   "pytest>=7.4",
