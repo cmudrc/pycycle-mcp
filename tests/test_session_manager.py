@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import cast
 
-from pycycle_mcp_server.session_manager import SessionManager
-from pycycle_mcp_server.types import CycleProblem
+from pycycle_mcp.session_manager import SessionManager
+from pycycle_mcp.types import CycleProblem
 
 from .conftest import DummyProblem
 

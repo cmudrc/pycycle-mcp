@@ -1,112 +1,78 @@
 # pycycle-mcp
 
-A lightweight MCP-style server that exposes [NASA pyCycle](https://github.com/OpenMDAO/pyCycle)/OpenMDAO engine cycle models as JSON-schema tools via FastMCP. The server maintains an in-memory mapping of `session_id` to OpenMDAO `Problem` instances so multiple cycles can be configured and evaluated in one process.
+[![CI](https://github.com/cmudrc/pycycle-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/cmudrc/pycycle-mcp/actions/workflows/ci.yml)
+[![Docs](https://github.com/cmudrc/pycycle-mcp/actions/workflows/docs-pages.yml/badge.svg)](https://github.com/cmudrc/pycycle-mcp/actions/workflows/docs-pages.yml)
+[![Examples](https://github.com/cmudrc/pycycle-mcp/actions/workflows/examples.yml/badge.svg)](https://github.com/cmudrc/pycycle-mcp/actions/workflows/examples.yml)
 
-## Features
+`pycycle-mcp` is a lightweight Model Context Protocol server for pyCycle/OpenMDAO
+engine-cycle workflows. The repository includes deterministic examples/tests so
+local development and CI can validate tooling contracts without requiring a full
+runtime installation of pyCycle/OpenMDAO assets.
 
-- Create, configure, and close pyCycle engine cycle models (high-bypass turbofan, turbojet, or custom).
-- Bundled cycle definitions from NASA's pyCycle `example_cycles` with sensible design-point defaults — models run out of the box.
-- List inputs/outputs, set inputs, and fetch outputs with structured JSON results.
-- Execute models, run parametric sweeps, and compute total derivatives via OpenMDAO.
-- FastMCP-based server with explicit JSON Schemas for each tool, plus a lightweight `ping` tool that works without pyCycle/OpenMDAO installed.
-- Console script `pycycle-mcp-server` that mirrors the tigl-mcp/su2-mcp CLI shape (stdio or HTTP transports).
+## Overview
 
-## Installation
+The project currently provides:
 
-The package ships with optional extras for full pyCycle support and development tooling. The `[full]` extra installs [om-pycycle](https://github.com/OpenMDAO/pyCycle) directly from GitHub since the PyPI `pycycle` package is an unrelated project.
+- A FastMCP-powered server with stdio and HTTP-compatible transports.
+- Tooling for cycle lifecycle, variable inspection/updates, execution, sweeps,
+  and total-derivative evaluation.
+- Pydantic-backed validation with structured MCP-style error payloads.
+- Deterministic examples for repository scaffolding checks and smoke tests.
 
-```bash
-python -m pip install .[full]   # installs openmdao + NASA om-pycycle from GitHub
-python -m pip install .[dev]    # installs lint/test dependencies
-```
+## Quickstart
 
-## Usage
-
-Run the server over stdio (default):
-
-```bash
-pycycle-mcp-server --transport stdio
-```
-
-Expose the server over HTTP/streamable-http:
+Requires Python 3.12+.
 
 ```bash
-pycycle-mcp-server --transport http --host 0.0.0.0 --port 8001
+python3 -m venv .venv
+source .venv/bin/activate
+make dev
+make test
+make ci
 ```
 
-### Quick example: create and run a turbofan
-
-```python
-# Using the MCP tools programmatically:
-from pycycle_mcp_server.tools.create_model import create_cycle_model
-from pycycle_mcp_server.tools.execution import run_cycle
-
-result = create_cycle_model({
-    "cycle_type": "turbofan",
-    "mode": "design",
-})
-session_id = result["session_id"]
-
-run_result = run_cycle({
-    "session_id": session_id,
-    "outputs_of_interest": ["perf.Fn", "perf.TSFC", "perf.OPR", "splitter.BPR"],
-})
-print(run_result["outputs"])
-# {'perf.Fn': 5900.0, 'perf.TSFC': 0.889, 'perf.OPR': 30.55, 'splitter.BPR': 1.5}
-```
-
-### Supported cycle types
-
-| `cycle_type` | Description | Key outputs |
-|--------------|-------------|-------------|
-| `turbofan`   | High-bypass 2-spool turbofan (HBTF) with fan, LPC, HPC, HPT, LPT, bypass | Fn, TSFC, OPR, BPR |
-| `turbojet`   | Single-spool turbojet with compressor, combustor, turbine | Fn, TSFC, OPR |
-| `custom`     | User-provided cycle class via `cycle_module_path` | Depends on model |
-
-### Integration with TiGL and SU2
-
-This server is designed to work alongside [tigl-mcp](https://github.com/cmudrc/tigl-mcp) and [su2-mcp](https://github.com/cmudrc/su2-mcp) in an automated aircraft analysis pipeline:
-
-1. **TiGL MCP** (port 8000): CPACS → STEP geometry
-2. **SU2 MCP** (port 8002): STEP → volume mesh → Euler CFD → CL/CD
-3. **pyCycle MCP** (port 8001): Flight conditions + drag → engine sizing (thrust, TSFC, fuel flow)
-
-The key data handoff: SU2's drag coefficient is converted to a thrust requirement (`Fn_DES = CD × q∞ × S_ref`) which sizes the engine to overcome aircraft drag at cruise.
-
-#### Config-driven pipeline
-
-The orchestration script (`pipeline/tigl_to_su2.py`) accepts a `pipeline_config.yaml` that controls all pipeline parameters including engine settings:
-
-```yaml
-engine:
-  type: turbofan           # turbofan | turbojet
-  default_thrust_lbf: 5900.0
-  # Uncomment to override NASA HBTF defaults:
-  # turbofan:
-  #   fan_pr: 1.685
-  #   hpc_pr: 9.369
-  #   t4_max_R: 2857.0
-```
-
-Engine design parameters that can be set via config or `set_inputs` MCP tool: `fan.PR`, `fan.eff`, `lpc.PR/eff`, `hpc.PR/eff`, `hpt.eff`, `lpt.eff`, `T4_MAX`, `Fn_DES`.
-
-Hardcoded internals (in the HBTF cycle definition): duct pressure losses, bleed fractions, nozzle velocity coefficients, shaft power extractions, Newton solver tolerances.
-
-## Development
-
-We recommend enabling pre-commit hooks for formatting and linting:
+Start the server over stdio:
 
 ```bash
-python -m pip install pre-commit
-pre-commit install
+pycycle-mcp --transport stdio
 ```
 
-Run quality checks locally:
+Inspect the non-blocking HTTP transport configuration example:
 
 ```bash
-python -m pip install .[dev,full]
-ruff check .
-black --check .
-mypy .
-pytest
+PYTHONPATH=src python3 examples/server/http_launch_config.py
 ```
+
+## Examples
+
+The examples are deterministic and aligned with the current repository
+contracts.
+
+- Examples index: [`examples/README.md`](examples/README.md)
+- Tool discovery: [`examples/client/tool_discovery.py`](examples/client/tool_discovery.py)
+- Session lifecycle: [`examples/cpacs/session_lifecycle.py`](examples/cpacs/session_lifecycle.py)
+- Export snapshot: [`examples/cpacs/export_snapshot.py`](examples/cpacs/export_snapshot.py)
+
+## Docs
+
+- Docs source: [`docs/index.rst`](docs/index.rst)
+- Published docs (placeholder): <https://cmudrc.github.io/pycycle-mcp/>
+
+Build the docs locally with:
+
+```bash
+make docs
+```
+
+## Python API Rename
+
+The package import root is now:
+
+- `pycycle_mcp` (new)
+
+Legacy pre-rename import paths and CLI aliases are intentionally
+removed.
+
+## Contributing
+
+Contribution guidelines live in [`CONTRIBUTING.md`](CONTRIBUTING.md).
