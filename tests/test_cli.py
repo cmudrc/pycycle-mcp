@@ -60,3 +60,13 @@ def test_main_runs_fastmcp_with_transport(monkeypatch: pytest.MonkeyPatch) -> No
             "show_banner": False,
         }
     ]
+
+
+def test_main_stdio_uses_non_network_transport_kwargs(monkeypatch: pytest.MonkeyPatch) -> None:
+    dummy_app = _DummyApp()
+    monkeypatch.setattr(server_main, "build_server", lambda: dummy_app)
+
+    exit_code = server_main.main(["--transport", "stdio"])
+
+    assert exit_code == 0
+    assert dummy_app.run_calls == [{"transport": "stdio", "show_banner": False}]

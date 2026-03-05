@@ -46,7 +46,7 @@ qa: lint fmt-check type test
 coverage:
 	mkdir -p artifacts/coverage
 	PYTHONPATH=src $(PYTEST) --cov=pycycle_mcp --cov-report=term --cov-report=json:artifacts/coverage/coverage.json -q
-	$(PYTHON) scripts/check_coverage_thresholds.py --coverage-json artifacts/coverage/coverage.json --minimum 40
+	$(PYTHON) scripts/check_coverage_thresholds.py --coverage-json artifacts/coverage/coverage.json --minimum 90
 
 examples-smoke:
 	PYTHONPATH=src $(PYTEST) -m examples_smoke -q

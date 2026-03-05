@@ -76,6 +76,11 @@ markers = [
   "integration_real: optional tests requiring real pyCycle/OpenMDAO assets",
 ]
 
+[tool.coverage.run]
+omit = [
+  "src/pycycle_mcp/cycles/*",
+]
+
 [tool.setuptools.package-dir]
 "" = "src"
 
