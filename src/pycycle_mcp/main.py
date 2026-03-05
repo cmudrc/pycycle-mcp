@@ -61,7 +61,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     app = build_server()
     transport = _normalize_transport(cast(TransportName, args.transport))
 
-    transport_kwargs: dict[str, Any] = {"show_banner": False}
+    transport_kwargs: dict[str, Any] = {
+        "show_banner": False,
+        "log_level": args.log_level,
+    }
     if transport in {"sse", "streamable-http"}:
         transport_kwargs["host"] = args.host
         transport_kwargs["port"] = args.port

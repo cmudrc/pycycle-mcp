@@ -57,6 +57,7 @@ def test_main_runs_fastmcp_with_transport(monkeypatch: pytest.MonkeyPatch) -> No
             "host": "127.0.0.1",
             "port": 8080,
             "path": "/mcp",
+            "log_level": "INFO",
             "show_banner": False,
         }
     ]
@@ -69,4 +70,22 @@ def test_main_stdio_uses_non_network_transport_kwargs(monkeypatch: pytest.Monkey
     exit_code = server_main.main(["--transport", "stdio"])
 
     assert exit_code == 0
-    assert dummy_app.run_calls == [{"transport": "stdio", "show_banner": False}]
+    assert dummy_app.run_calls == [{"transport": "stdio", "show_banner": False, "log_level": "INFO"}]
+
+
+def test_main_forwards_custom_log_level(monkeypatch: pytest.MonkeyPatch) -> None:
+    dummy_app = _DummyApp()
+    monkeypatch.setattr(server_main, "build_server", lambda: dummy_app)
+
+    exit_code = server_main.main(["--transport", "sse", "--log-level", "DEBUG"])
+
+    assert exit_code == 0
+    assert dummy_app.run_calls == [
+        {
+            "transport": "sse",
+            "host": "0.0.0.0",
+            "port": 8000,
+            "show_banner": False,
+            "log_level": "DEBUG",
+        }
+    ]
