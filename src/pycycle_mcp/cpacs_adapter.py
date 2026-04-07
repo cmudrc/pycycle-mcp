@@ -21,6 +21,7 @@ def _check_pycycle_available() -> bool:
     try:
         import openmdao.api  # noqa: F401
         import pycycle.api  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -83,6 +84,7 @@ def read_from_cpacs(
 def _compute_thrust_required(cd: float, mach: float, altitude_ft: float, ref_area_m2: float) -> float:
     """Estimate thrust required [lbf] from drag coefficient."""
     import math
+
     alt_m = altitude_ft * 0.3048
     T0, P0 = 288.15, 101325.0
     if alt_m <= 11000:
@@ -91,7 +93,7 @@ def _compute_thrust_required(cd: float, mach: float, altitude_ft: float, ref_are
     else:
         T = 216.65
         P = 22632.1 * math.exp(-0.00015769 * (alt_m - 11000))
-    q = 0.5 * 1.4 * P * mach ** 2
+    q = 0.5 * 1.4 * P * mach**2
     drag_N = cd * q * ref_area_m2
     return drag_N * 0.224809
 
@@ -103,11 +105,13 @@ def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
     from pycycle_mcp.tools.variables import set_inputs
 
     # Create a turbofan model
-    create_result = create_cycle_model({
-        "cycle_type": "turbofan",
-        "mode": "design",
-        "options": {},
-    })
+    create_result = create_cycle_model(
+        {
+            "cycle_type": "turbofan",
+            "mode": "design",
+            "options": {},
+        }
+    )
 
     if "error" in create_result:
         return {"error": create_result["error"], "solver": "pycycle_openmdao"}
@@ -135,23 +139,33 @@ def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
         else:
             input_values["Fn_DES"] = 5900.0
 
-        set_inputs({
-            "session_id": session_id,
-            "values": input_values,
-            "allow_missing": True,
-        })
+        set_inputs(
+            {
+                "session_id": session_id,
+                "values": input_values,
+                "allow_missing": True,
+            }
+        )
 
         # Run the cycle
         outputs_of_interest = [
-            "perf.Fn", "perf.TSFC", "perf.OPR", "perf.Fg",
-            "splitter.BPR", "fc.Fl_O:stat:MN", "fc.alt",
-            "inlet.F_ram", "burner.Wfuel",
+            "perf.Fn",
+            "perf.TSFC",
+            "perf.OPR",
+            "perf.Fg",
+            "splitter.BPR",
+            "fc.Fl_O:stat:MN",
+            "fc.alt",
+            "inlet.F_ram",
+            "burner.Wfuel",
         ]
 
-        run_result = run_cycle({
-            "session_id": session_id,
-            "outputs_of_interest": outputs_of_interest,
-        })
+        run_result = run_cycle(
+            {
+                "session_id": session_id,
+                "outputs_of_interest": outputs_of_interest,
+            }
+        )
 
         if not run_result.get("success"):
             return {
