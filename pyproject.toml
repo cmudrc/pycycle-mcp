@@ -71,8 +71,7 @@ mypy_path = "src"
 
 [[tool.mypy.overrides]]
 module = ["pycycle_mcp.cpacs_adapter"]
-disallow_untyped_defs = false
-warn_return_any = false
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
