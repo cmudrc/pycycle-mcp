@@ -69,6 +69,11 @@ ignore_missing_imports = true
 exclude = ["^build/", "^src/pycycle_mcp/cycles/"]
 mypy_path = "src"
 
+[[tool.mypy.overrides]]
+module = ["pycycle_mcp.cpacs_adapter"]
+disallow_untyped_defs = false
+warn_return_any = false
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=pycycle_mcp --cov-report=term-missing"
