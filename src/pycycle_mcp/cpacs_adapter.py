@@ -98,9 +98,9 @@ def _compute_thrust_required(cd: float, mach: float, altitude_ft: float, ref_are
 
 def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
     """Run actual pyCycle/OpenMDAO through the real MCP tool functions."""
-    from pycycle_mcp.tools.create_model import create_cycle_model, close_cycle_model
-    from pycycle_mcp.tools.variables import set_inputs
+    from pycycle_mcp.tools.create_model import close_cycle_model, create_cycle_model
     from pycycle_mcp.tools.execution import run_cycle
+    from pycycle_mcp.tools.variables import set_inputs
 
     # Create a turbofan model
     create_result = create_cycle_model({
@@ -135,7 +135,7 @@ def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
         else:
             input_values["Fn_DES"] = 5900.0
 
-        set_result = set_inputs({
+        set_inputs({
             "session_id": session_id,
             "values": input_values,
             "allow_missing": True,
