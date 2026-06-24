@@ -87,7 +87,16 @@ thrust, TSFC, OPR, BPR, fuel flow — into `//mcpResults`.
 | Direction | XPath |
 |-----------|-------|
 | **Reads** | `.//vehicles/engines`, `.//analysisResults/aero/coefficients/CD` |
-| **Writes** | `.//vehicles/engines/engine/analysis/mcpResults` (Fn, TSFC, OPR, BPR, fuel flow) |
+| **Writes** | `.//vehicles/engines/engine/analysis/mcpResults` (Fn_DES, Fn, TSFC, OPR, BPR, fuel flow) |
+
+#### Design-thrust override (engine sizing)
+
+`run_adapter(..., design_thrust_lbf=<float>)` is an additive option that drives
+the cycle to an explicit design net thrust `Fn_DES` instead of deriving it from
+CPACS aero drag. This is the entry point used by the agent's engine-resizing and
+cruise-match skills to iterate on engine size (the achieved `Fn_DES_lbf` is
+echoed back in the results). The classic drag-derived path is unchanged when the
+argument is omitted.
 
 ### Running as part of the pipeline
 

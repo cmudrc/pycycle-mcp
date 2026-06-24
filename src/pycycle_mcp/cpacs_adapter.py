@@ -125,8 +125,13 @@ def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
             "fc.alt": inputs["altitude_ft"],
         }
 
-        # Compute design thrust from aero drag if available
-        if inputs.get("cd_from_aero") is not None:
+        # Explicit design-thrust override takes priority (used by the
+        # engine-resizing / cruise-match skills to drive the cycle to a
+        # specific sizing point).  Falls back to the aero-drag estimate, then
+        # the CPACS thrust00 value, then a default.
+        if inputs.get("design_thrust_lbf") is not None:
+            input_values["Fn_DES"] = float(inputs["design_thrust_lbf"])
+        elif inputs.get("cd_from_aero") is not None:
             thrust_lbf = _compute_thrust_required(
                 inputs["cd_from_aero"],
                 inputs["mach"],
@@ -189,6 +194,7 @@ def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
         return {
             "engine_uid": inputs.get("engine_uid"),
             "engine_name": inputs.get("engine_name", "unknown"),
+            "Fn_DES_lbf": round(float(input_values["Fn_DES"]), 2),
             "Fn_N": round(float(fn) * 4.44822, 2),
             "Fn_lbf": round(float(fn), 2),
             "Fg_N": round(float(fg) * 4.44822, 2),
@@ -254,13 +260,23 @@ def write_to_cpacs(cpacs_xml: str, results: dict[str, Any]) -> str:
 def run_adapter(
     cpacs_xml: str,
     flight_conditions: dict[str, float] | None = None,
+    design_thrust_lbf: float | None = None,
 ) -> tuple[str, dict[str, Any]]:
     """Full read→process→write cycle for the pyCycle domain.
 
     Calls real pyCycle/OpenMDAO when available; reports the error
     honestly when it's not.
+
+    Parameters
+    ----------
+    design_thrust_lbf : float, optional
+        Explicit design net thrust ``Fn_DES`` [lbf] to size the cycle to.
+        When supplied it overrides the aero-drag-derived estimate.  Used by
+        the engine-resizing and cruise-match skills to iterate on engine size.
     """
     inputs = read_from_cpacs(cpacs_xml, flight_conditions)
+    if design_thrust_lbf is not None:
+        inputs["design_thrust_lbf"] = float(design_thrust_lbf)
 
     if not _check_pycycle_available():
         results = {
