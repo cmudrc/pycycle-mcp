@@ -199,7 +199,10 @@ def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
             "Fn_lbf": round(float(fn), 2),
             "Fg_N": round(float(fg) * 4.44822, 2),
             "TSFC_lb_lbf_hr": round(float(tsfc), 5),
-            "TSFC_1_per_s": round(float(tsfc) / 3600.0, 8),
+            # Mass-based TSFC in kg/(N*s), the unit NSEG's segment physics
+            # consumes: lbm/(lbf*hr) * (0.453592 kg/lbm) / (4.44822 N/lbf) / 3600 s.
+            # (A bare /3600 would silently drop the 1/g0 between lbm and lbf.)
+            "TSFC_1_per_s": round(float(tsfc) * 0.453592 / 4.44822 / 3600.0, 10),
             "OPR": round(float(opr), 2),
             "BPR": round(float(bpr), 2),
             "fuel_flow_kg_s": round(float(wfuel) * 0.453592, 6),
