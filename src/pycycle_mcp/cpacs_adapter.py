@@ -132,6 +132,22 @@ def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
         if inputs.get("design_thrust_lbf") is not None:
             input_values["Fn_DES"] = float(inputs["design_thrust_lbf"])
         elif inputs.get("cd_from_aero") is not None:
+            cd_in = float(inputs["cd_from_aero"])
+            if cd_in <= 0.0 or cd_in > 20.0:
+                # Sizing an engine to an impossible drag is how a single bad
+                # aero result became a -29 GN engine and a negative fuel burn.
+                return {
+                    "error": {
+                        "type": "unphysical_input",
+                        "message": (f"Refusing to size an engine from a drag coefficient of {cd_in:.6g}."),
+                        "details": (
+                            "Drag coefficients are positive and of order 0.01 "
+                            "to 1 for this class of aircraft. Re-run the aero "
+                            "stage and check its result before sizing an engine."
+                        ),
+                    },
+                    "solver": "pycycle_openmdao",
+                }
             thrust_lbf = _compute_thrust_required(
                 inputs["cd_from_aero"],
                 inputs["mach"],
@@ -142,7 +158,27 @@ def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
         elif inputs.get("thrust00_N"):
             input_values["Fn_DES"] = inputs["thrust00_N"] * 0.224809 * 0.3
         else:
-            input_values["Fn_DES"] = 5900.0
+            # Nothing to size the engine from: no explicit design thrust, no
+            # drag from a preceding aero run, and no engine defined in the
+            # CPACS file. This previously substituted Fn_DES = 5900 lbf, a
+            # number with no provenance that silently became "the engine".
+            return {
+                "error": {
+                    "type": "missing_engine_definition",
+                    "message": (
+                        "Cannot size the engine: the CPACS file defines no "
+                        "engine, and no design thrust or drag coefficient was "
+                        "supplied."
+                    ),
+                    "details": (
+                        "Do one of: add an <engines> block to the CPACS file; "
+                        "pass design_thrust_lbf explicitly, as the engine-resize "
+                        "and cruise-match skills do; or run the aero stage first "
+                        "so the engine can be sized to the computed drag."
+                    ),
+                },
+                "solver": "pycycle_openmdao",
+            }
 
         set_inputs(
             {
@@ -190,6 +226,33 @@ def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
         fg = outputs.get("perf.Fg", 0.0) or 0.0
         bpr = outputs.get("splitter.BPR", 0.0) or 0.0
         wfuel = outputs.get("burner.Wfuel", 0.0) or 0.0
+
+        # OpenMDAO reporting success is not the same as the cycle being
+        # physical. A converged solve returned Fn = -29 GN with a negative
+        # burner fuel flow on a partner's machine, and every downstream tool
+        # accepted it. Check the signs before publishing anything.
+        for label, value, unit in (
+            ("net thrust", fn, "lbf"),
+            ("gross thrust", fg, "lbf"),
+            ("fuel flow", wfuel, "lbm/s"),
+            ("TSFC", tsfc, "lb/(lbf.hr)"),
+            ("overall pressure ratio", opr, ""),
+        ):
+            if value is not None and float(value) < 0.0:
+                return {
+                    "error": {
+                        "type": "unphysical_result",
+                        "message": (f"pyCycle converged but returned a negative {label} ({float(value):.6g} {unit})."),
+                        "details": (
+                            "A negative value here means the cycle solved to a "
+                            "non-physical operating point, usually because the "
+                            "requested design thrust was itself invalid. The "
+                            "result was not written to CPACS. Check the design "
+                            "thrust and the drag it was derived from."
+                        ),
+                    },
+                    "solver": "pycycle_openmdao",
+                }
 
         return {
             "engine_uid": inputs.get("engine_uid"),
