@@ -63,8 +63,14 @@ def read_from_cpacs(
         if cd_el is not None and cd_el.text:
             cd_from_aero = float(cd_el.text)
 
+    # No default. 122.4 m2 is the D150's wing area, and defaulting to it meant
+    # any file without a reference area was sized as if it were a D150.
     ref_area_el = root.find(".//vehicles/aircraft/model/reference/area")
-    ref_area = float(ref_area_el.text) if ref_area_el is not None and ref_area_el.text else 122.4
+    ref_area = (
+        float(ref_area_el.text)
+        if ref_area_el is not None and ref_area_el.text
+        else None
+    )
 
     fc = flight_conditions or {}
 
@@ -144,6 +150,26 @@ def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
                             "Drag coefficients are positive and of order 0.01 "
                             "to 1 for this class of aircraft. Re-run the aero "
                             "stage and check its result before sizing an engine."
+                        ),
+                    },
+                    "solver": "pycycle_openmdao",
+                }
+            if inputs.get("ref_area_m2") is None:
+                # Drag is CD * q * S, so without S there is no thrust to size
+                # to. This used to default to the D150's 122.4 m2, which sized
+                # every aircraft as if it had a narrow-body wing.
+                return {
+                    "error": {
+                        "type": "missing_input",
+                        "message": (
+                            "Cannot convert drag to thrust: the CPACS file "
+                            "states no reference area."
+                        ),
+                        "details": (
+                            "Add //vehicles/aircraft/model/reference/area. It "
+                            "is not defaulted, because substituting one "
+                            "aircraft's wing area for another's silently "
+                            "produces a plausible and wrong engine size."
                         ),
                     },
                     "solver": "pycycle_openmdao",
