@@ -66,11 +66,7 @@ def read_from_cpacs(
     # No default. 122.4 m2 is the D150's wing area, and defaulting to it meant
     # any file without a reference area was sized as if it were a D150.
     ref_area_el = root.find(".//vehicles/aircraft/model/reference/area")
-    ref_area = (
-        float(ref_area_el.text)
-        if ref_area_el is not None and ref_area_el.text
-        else None
-    )
+    ref_area = float(ref_area_el.text) if ref_area_el is not None and ref_area_el.text else None
 
     fc = flight_conditions or {}
 
@@ -161,10 +157,7 @@ def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
                 return {
                     "error": {
                         "type": "missing_input",
-                        "message": (
-                            "Cannot convert drag to thrust: the CPACS file "
-                            "states no reference area."
-                        ),
+                        "message": ("Cannot convert drag to thrust: the CPACS file states no reference area."),
                         "details": (
                             "Add //vehicles/aircraft/model/reference/area. It "
                             "is not defaulted, because substituting one "
