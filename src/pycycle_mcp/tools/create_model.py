@@ -92,6 +92,13 @@ def _apply_design_defaults(problem: CycleProblem, model: object, mode: str) -> N
         problem.set_val("fc.MN", 0.8)
         problem.set_val("T4_MAX", 2857.0, units="degR")
         problem.set_val("Fn_DES", 5900.0, units="lbf")
+        # Bypass ratio is a design input of the single-point build (the BPR
+        # balance exists only off-design). pyCycle's Splitter element defaults
+        # it to 1.5 -- a low-bypass engine -- and until 2026-09-10 nothing here
+        # set it, so every CPACS-driven run published BPR 1.5 as the engine's.
+        # 5.105 is the documented reference HBTF design point
+        # (high_bypass_turbofan.py: set_input_defaults('DESIGN.splitter.BPR')).
+        problem.set_val("splitter.BPR", 5.105)
         # Initial guesses for Newton solver
         problem["balance.FAR"] = 0.025
         problem["balance.W"] = 100.0

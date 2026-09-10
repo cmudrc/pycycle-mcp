@@ -56,7 +56,7 @@ contracts.
 ## Docs
 
 - Docs source: [`docs/index.rst`](docs/index.rst)
-- Published docs (placeholder): <https://cmudrc.github.io/pycycle-mcp/>
+- Published docs: <https://cmudrc.github.io/pycycle-mcp/>
 
 Build the docs locally with:
 
@@ -101,7 +101,7 @@ argument is omitted.
 ### Running as part of the pipeline
 
 ```bash
-python pipeline/shared_cpacs_orchestrator.py D150_v30.xml --mcps tigl su2 pycycle mission
+python pipeline/shared_cpacs_orchestrator.py D150_v30.xml --mcps tigl su2 pycycle nseg
 ```
 
 See [cmudrc/aircraft-analysis](https://github.com/cmudrc/aircraft-analysis) for
@@ -113,7 +113,8 @@ full pipeline documentation, versioning details, and installation instructions.
 |-----|-----------|
 | TiGL (geometry) | [cmudrc/tigl-mcp](https://github.com/cmudrc/tigl-mcp) |
 | SU2 (CFD aerodynamics) | [cmudrc/su2-mcp](https://github.com/cmudrc/su2-mcp) |
-| Mission (trajectory/fuel) | [cmudrc/mission-mcp](https://github.com/cmudrc/mission-mcp) |
+| NSEG (mission segments, fuel) | [cmudrc/nseg-mcp](https://github.com/cmudrc/nseg-mcp) |
+| Aviary (trajectory optimisation) | [cmudrc/aviary-cpacs-mcp](https://github.com/cmudrc/aviary-cpacs-mcp) |
 
 ## Contributing
 

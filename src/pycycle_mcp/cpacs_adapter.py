@@ -126,6 +126,11 @@ def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
             "fc.MN": inputs["mach"],
             "fc.alt": inputs["altitude_ft"],
         }
+        # The file's own bypass ratio, when it states one, overrides the
+        # reference design point. Until 2026-09-10 this value was read and
+        # then ignored, and the model's default was published as the engine's.
+        if inputs.get("bpr00") is not None:
+            input_values["splitter.BPR"] = float(inputs["bpr00"])
 
         # Explicit design-thrust override takes priority (used by the
         # engine-resizing / cruise-match skills to drive the cycle to a
