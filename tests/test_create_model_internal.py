@@ -63,8 +63,10 @@ def _install_fake_cycle_modules(monkeypatch: pytest.MonkeyPatch) -> tuple[type[o
 
 
 def test_resolve_builtin_cycle_import_error(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delitem(sys.modules, "pycycle", raising=False)
-    monkeypatch.delitem(sys.modules, "pycycle.api", raising=False)
+    # A None entry in sys.modules makes `import pycycle` raise ImportError even
+    # when the package is installed, so this test is independent of the venv.
+    monkeypatch.setitem(sys.modules, "pycycle", None)
+    monkeypatch.setitem(sys.modules, "pycycle.api", None)
 
     with pytest.raises(ImportError):
         create_model._resolve_builtin_cycle("turbofan")
@@ -112,8 +114,10 @@ class _OpenMDAOProblem(_RecorderProblem):
 
 
 def test_build_problem_import_error_when_openmdao_missing(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delitem(sys.modules, "openmdao", raising=False)
-    monkeypatch.delitem(sys.modules, "openmdao.api", raising=False)
+    # Same device as above: force the import to fail regardless of what the
+    # environment has installed.
+    monkeypatch.setitem(sys.modules, "openmdao", None)
+    monkeypatch.setitem(sys.modules, "openmdao.api", None)
 
     with pytest.raises(ImportError):
         create_model._build_problem(lambda: _FakeModel(), "design", {})
