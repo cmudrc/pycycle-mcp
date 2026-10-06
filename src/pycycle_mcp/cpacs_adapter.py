@@ -64,6 +64,14 @@ def read_from_cpacs(
         cd_el = aero_el.find("CD")
         if cd_el is not None and cd_el.text:
             cd_from_aero = float(cd_el.text)
+    # The Mach number SU2 computed that drag at, as the aero stage records it.
+    aero_mach_el = root.find(".//vehicles/aircraft/model/analysisResults/aero/mach")
+    cd_aero_mach = None
+    if aero_mach_el is not None and aero_mach_el.text:
+        try:
+            cd_aero_mach = float(aero_mach_el.text)
+        except ValueError:
+            cd_aero_mach = None
 
     # No default. 122.4 m2 is the D150's wing area, and defaulting to it meant
     # any file without a reference area was sized as if it were a D150.
@@ -79,6 +87,7 @@ def read_from_cpacs(
         "bpr00": bpr00,
         "opr00": opr00,
         "cd_from_aero": cd_from_aero,
+        "cd_aero_mach": cd_aero_mach,
         "ref_area_m2": ref_area,
         "mach": fc.get("mach", 0.78),
         "altitude_ft": fc.get("altitude_ft", 35000.0),
@@ -100,6 +109,47 @@ def _compute_thrust_required(cd: float, mach: float, altitude_ft: float, ref_are
     q = 0.5 * 1.4 * P * mach**2
     drag_N = cd * q * ref_area_m2
     return drag_N * 0.224809
+
+
+#: How far the Mach of the stored drag may sit from the engine's design Mach.
+MACH_TOLERANCE = 0.005
+
+
+def _aero_mach_mismatch(inputs: dict[str, Any]) -> dict[str, Any] | None:
+    """Refuse to size to a drag that SU2 computed at another Mach number.
+
+    The file holds one aero result, whichever SU2 run was last. Asked to
+    compare two cruise Mach numbers, an agent ran SU2 at 0.78 and 0.70 and
+    then the engine at both: the 0.78 engine was sized to the 0.70 drag
+    (dry run, 2026-10-05). Only applies when the drag is what sizes the
+    engine (no explicit design_thrust_lbf) and the aero stage recorded its
+    Mach; altitude does not enter, since the inviscid coefficient does not
+    depend on it and the conversion to thrust uses this run's altitude.
+    """
+    if inputs.get("design_thrust_lbf") is not None or inputs.get("cd_from_aero") is None:
+        return None
+    aero_mach = inputs.get("cd_aero_mach")
+    if aero_mach is None or aero_mach <= 0:
+        return None
+    mach = float(inputs["mach"])
+    if abs(aero_mach - mach) <= MACH_TOLERANCE:
+        return None
+    return {
+        "error": {
+            "type": "inconsistent_inputs",
+            "message": (
+                f"Cannot size the engine at Mach {mach:g} to the drag in this file: "
+                f"SU2 computed that drag at Mach {aero_mach:g}."
+            ),
+            "details": (
+                "The file holds only the most recent aerodynamic result. Run "
+                "su2_run_aero at this Mach first, or pass design_thrust_lbf; "
+                "to compare cruise points, run the aero, engine and mission "
+                "stages for one point before starting the next."
+            ),
+        },
+        "solver": "pycycle_openmdao",
+    }
 
 
 def _run_real_pycycle(inputs: dict[str, Any]) -> dict[str, Any]:
@@ -443,6 +493,18 @@ def run_adapter(
     inputs = read_from_cpacs(cpacs_xml, flight_conditions)
     if design_thrust_lbf is not None:
         inputs["design_thrust_lbf"] = float(design_thrust_lbf)
+
+    # Refused before anything runs, and the file is returned unchanged: an
+    # earlier, valid engine result stays in place for the stages that read it.
+    mismatch = _aero_mach_mismatch(inputs)
+    if mismatch is not None:
+        return cpacs_xml, {
+            **mismatch,
+            "engine_uid": inputs.get("engine_uid"),
+            "engine_name": inputs.get("engine_name"),
+            "mach": inputs["mach"],
+            "altitude_ft": inputs["altitude_ft"],
+        }
 
     if not _check_pycycle_available():
         results = {
