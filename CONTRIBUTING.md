@@ -51,4 +51,4 @@ pre-commit run --all-files
 - The default test suite targets deterministic, lightweight stand-ins and avoids
   requiring real pyCycle/OpenMDAO assets.
 - Real pyCycle/OpenMDAO integration tests should stay optional and use the
-  `integration_real` marker once those fixtures exist.
+  `integration_real` marker.
